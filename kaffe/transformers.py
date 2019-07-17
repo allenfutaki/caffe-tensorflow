@@ -51,7 +51,7 @@ class DataInjector(object):
     def normalize_pb_data(self, layer):
         transformed = []
         for blob in layer.blobs:
-            if len(blob.shape.dim):
+            if blob.shape.dim:
                 dims = blob.shape.dim
                 c_o, c_i, h, w = map(int, [1] * (4 - len(dims)) + list(dims))
             else:
@@ -122,6 +122,7 @@ class DataReshaper(object):
                 # Check for 2+ dimensional data
                 if any(len(tensor.shape) > 1 for tensor in node.data):
                     print_stderr('Warning: parmaters not reshaped for node: {}'.format(node))
+                    print('Some infos', node.kind, self.reshaped_node_types)
                 continue
             transpose_order = self.map(node.kind)
             weights = node.data[0]
@@ -205,6 +206,20 @@ class ReLUFuser(SubNodeFuser):
     def merge(self, parent, _):
         parent.metadata['relu'] = True
 
+class PReLUFuser(SubNodeFuser):
+    """ Fuses parametric rectified linear units with their parent nodes.
+        See ReLUFuser as reference
+    """
+
+    def __init__(self, allowed_parent_types=None):
+        self.allowed_parent_types = allowed_parent_types
+
+    def is_eligible_pair(self, parent, child):
+        return ((self.allowed_parent_types is None or parent.kind in self.allowed_parent_types) and
+                child.kind == NodeKind.PReLU)
+
+    def merge(self, parent, _):
+        parent.metadata['prelu'] = True
 
 class BatchNormScaleBiasFuser(SubNodeFuser):
     '''

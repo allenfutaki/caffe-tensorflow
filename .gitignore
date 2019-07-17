@@ -10,5 +10,6 @@
 
 *.pb
 *.pbtxt
+*.mat
 .tmp/
 .vscode/
