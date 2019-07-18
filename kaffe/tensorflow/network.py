@@ -65,6 +65,7 @@ class Network(object):
             data_dict = pickle.load(handle)
         for op_name in data_dict:
             with tf.compat.v1.variable_scope(op_name, reuse=True):
+                # TODO not sure why name mapping does not work
                 if 'relu' in op_name:
                     try:
                         var = tf.compat.v1.get_variable(op_name)
@@ -269,7 +270,7 @@ class Network(object):
             elif prelu:
                 op = self.prelu_layer
             else:
-                op = tf.nn.xw_plus_b
+                op = tf.compat.v1.nn.xw_plus_b
             fc = op(feed_in, weights, biases, name=scope.name)
             return fc
 

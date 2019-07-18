@@ -2,16 +2,16 @@
 
 import os
 import sys
-import numpy as np
 import argparse
-from kaffe import KaffeError, print_stderr
-from kaffe.tensorflow import TensorFlowTransformer
 
 import shutil
 import pickle
 import tensorflow as tf
 from tensorflow.python.tools.freeze_graph import freeze_graph
 from tensorflow.python.tools import optimize_for_inference_lib
+
+from kaffe import KaffeError, print_stderr
+from kaffe.tensorflow import TensorFlowTransformer
 
 
 def fatal_error(msg):
@@ -22,13 +22,15 @@ def fatal_error(msg):
 def validate_arguments(args):
     if (args.data_output_path is not None) and (args.caffemodel is None):
         fatal_error('No input data path provided.')
-    if (args.caffemodel is not None) and (args.data_output_path is None) and (args.standalone_output_path is None):
+    if (args.caffemodel is not None) and (args.data_output_path is None) and \
+        (args.standalone_output_path is None):
         fatal_error('No output data path provided.')
-    if (args.code_output_path is None) and (args.data_output_path is None) and (args.standalone_output_path is None):
+    if (args.code_output_path is None) and (args.data_output_path is None) and \
+        (args.standalone_output_path is None):
         fatal_error('No output path specified.')
 
 
-def convert(def_path, caffemodel_path, data_output_path, code_output_path, standalone_output_path, 
+def convert(def_path, caffemodel_path, data_output_path, code_output_path, standalone_output_path,
             phase, freeze):
     try:
         sess = tf.InteractiveSession()
@@ -108,16 +110,20 @@ def convert(def_path, caffemodel_path, data_output_path, code_output_path, stand
             output_node_names = '{0}/{0}'.format(output_node_names)
             if freeze == 'freeze_graph':
                 freeze_graph(input_graph_path, input_saver_def_path,
-                            input_binary, input_checkpoint_path,
-                            output_node_names, restore_op_name,
-                            filename_tensor_name, output_graph_path,
-                            clear_devices, '')
+                             input_binary, input_checkpoint_path,
+                             output_node_names, restore_op_name,
+                             filename_tensor_name, output_graph_path,
+                             clear_devices, '')
             elif freeze == 'optimize_for_inference':
                 graph_def = sess.graph.as_graph_def()
-                graph_def = tf.graph_util.convert_variables_to_constants(sess, graph_def, [output_node_names])
-                graph_def_f32 = optimize_for_inference_lib.optimize_for_inference(graph_def, ['data'], [output_node_names], tf.float32.as_datatype_enum)
-                tf.train.write_graph(graph_def_f32, "", 'graph_f32.pb', as_text=False)
-                tf.train.write_graph(graph_def_f32, "", 'graph_f32.pbtxt', as_text=True)
+                graph_def = tf.graph_util.convert_variables_to_constants(
+                    sess, graph_def, [output_node_names])
+                graph_def_f32 = optimize_for_inference_lib.optimize_for_inference(
+                    graph_def, ['data'], [output_node_names], tf.float32.as_datatype_enum)
+                tf.train.write_graph(
+                    graph_def_f32, "", standalone_output_path.rsplit('.',1)[0] + '.pb', as_text=False)
+                tf.train.write_graph(
+                    graph_def_f32, "", standalone_output_path.rsplit('.',1)[0] + '.pbtxt', as_text=True)
 
             #f = shutil.rmtree(temp_folder)
             writer = tf.compat.v1.summary.FileWriter('.tmp', sess.graph)
@@ -134,7 +140,8 @@ def main():
     parser.add_argument('--caffemodel', help='Model data (.caffemodel) path')
     parser.add_argument('--data-output-path', help='Converted data output path')
     parser.add_argument('--code-output-path', help='Save generated source to this path')
-    parser.add_argument('--standalone-output-path', help='Save generated standalone tensorflow model to this path')
+    parser.add_argument('--standalone-output-path',
+                        help='Save generated standalone tensorflow model to this path')
     parser.add_argument('-p',
                         '--phase',
                         default='test',
@@ -142,7 +149,8 @@ def main():
     parser.add_argument('-fz',
                         '--freeze',
                         default=None,
-                        help='Freeze option for inference: No (default), freeze_graph or optimize_for_inference(e.g. for OpenCV)')
+                        help="""Freeze option for inference: No (default),
+                                freeze_graph or optimize_for_inference(e.g. for OpenCV)""")
     args = parser.parse_args()
     validate_arguments(args)
     convert(args.def_path, args.caffemodel, args.data_output_path, args.code_output_path,

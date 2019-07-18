@@ -8,8 +8,12 @@
 # Python cache
 *.pyc
 
+# Ignore Results
 *.pb
 *.pbtxt
 *.mat
 .tmp/
+
+# Ignore Development setting
 .vscode/
+.ipynb_checkpoints/
