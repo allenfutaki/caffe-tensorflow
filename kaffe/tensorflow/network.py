@@ -6,7 +6,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn_ops
 
-DEFAULT_PADDING = 'SAME'
+DEFAULT_PADDING = 'SAME' 
 
 
 def layer(op):
@@ -146,20 +146,23 @@ class Network(object):
              name,
              relu=True,
              prelu=False,
-             padding=DEFAULT_PADDING,
+             padding=(DEFAULT_PADDING, 0, 0),
              group=1,
              biased=True):
+        pad_type, p_h, p_w = padding  
         # Verify that the padding is acceptable
-        self.validate_padding(padding)
+        self.validate_padding(pad_type)
         # Get the number of channels in the input
         c_i = inputs.get_shape()[-1]
         # Verify that the grouping parameter is valid
         assert c_i % group == 0
         assert c_o % group == 0
-        # Convolution for a given input and kernel
-        convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding)
+        # Convolution for a given input and kernel           
+        convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=pad_type)
         with tf.compat.v1.variable_scope(name) as scope:
             kernel = self.make_var('weights', shape=[k_h, k_w, c_i / group, c_o])
+            if p_h > 0 and p_w > 0:
+                inputs = tf.pad(inputs, [[0, 0], [p_h, p_h], [p_w, p_w], [0, 0]])
             if group == 1:
                 # This is the common-case. Convolve the input without any further complications.
                 output = convolve(inputs, kernel)
@@ -217,17 +220,23 @@ class Network(object):
         return x
 
     @layer
-    def max_pool(self, x, k_h, k_w, s_h, s_w, name, padding=DEFAULT_PADDING):
-        self.validate_padding(padding)
+    def max_pool(self, x, k_h, k_w, s_h, s_w, name, padding=(DEFAULT_PADDING, 0, 0)):
+        pad_type, p_h, p_w = padding
+        self.validate_padding(pad_type)
+        if p_h > 0 and p_w > 0:
+            x = tf.pad(x, [[0, 0], [p_h, p_h], [p_w, p_w], [0, 0]])
         return tf.nn.max_pool2d(x,
                                 ksize=[1, k_h, k_w, 1],
                                 strides=[1, s_h, s_w, 1],
-                                padding=padding,
+                                padding=pad_type,
                                 name=name)
 
     @layer
-    def avg_pool(self, x, k_h, k_w, s_h, s_w, name, padding=DEFAULT_PADDING):
-        self.validate_padding(padding)
+    def avg_pool(self, x, k_h, k_w, s_h, s_w, name, padding=(DEFAULT_PADDING, 0, 0)):
+        pad_type, p_h, p_w = padding
+        self.validate_padding(pad_type)
+        if p_h > 0 and p_w > 0:
+            x = tf.pad(x, [[0, 0], [p_h, p_h], [p_w, p_w], [0, 0]])
         return tf.nn.avg_pool(x,
                               ksize=[1, k_h, k_w, 1],
                               strides=[1, s_h, s_w, 1],

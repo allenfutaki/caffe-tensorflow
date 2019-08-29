@@ -18,15 +18,13 @@ def get_padding_type(kernel_params, input_shape, output_shape):
     https://github.com/Yangqing/caffe2/blob/master/caffe2/proto/caffe2_legacy.proto
     '''
     k_h, k_w, s_h, s_w, p_h, p_w = kernel_params
-    s_o_h = np.ceil(input_shape.height / float(s_h))
-    s_o_w = np.ceil(input_shape.width / float(s_w))
-    if (output_shape.height == s_o_h) and (output_shape.width == s_o_w):
-        return 'SAME'
-    v_o_h = np.ceil((input_shape.height - k_h + 1.0) / float(s_h))
-    v_o_w = np.ceil((input_shape.width - k_w + 1.0) / float(s_w))
-    if (output_shape.height == v_o_h) and (output_shape.width == v_o_w):
-        return 'VALID'
-    return None
+    if p_h > 0:
+        return ('VALID', p_h, p_w)
+    else:
+        if s_h > 1:
+            return ('SAME', 0, 0)
+        else:
+            return ('VALID', 0, 0)
 
 
 class TensorFlowNode(object):
@@ -84,7 +82,7 @@ class TensorFlowMapper(NodeMapper):
         input_shape = node.get_only_parent().output_shape
         padding = get_padding_type(kernel_params, input_shape, node.output_shape)
         # Only emit the padding if it's not the default value.
-        padding = {'padding': padding} if padding != network.DEFAULT_PADDING else {}
+        padding = {'padding': padding}
         return (kernel_params, padding)
 
     def map_convolution(self, node):
