@@ -240,7 +240,7 @@ class Network(object):
         return tf.nn.avg_pool(x,
                               ksize=[1, k_h, k_w, 1],
                               strides=[1, s_h, s_w, 1],
-                              padding=padding,
+                              padding=pad_type,
                               name=name)
 
     @layer
