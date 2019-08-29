@@ -4,8 +4,8 @@
 Since the way of padding between Caffe and TensorFlow is different, there is some rules can address that.
 - Caffe pad the feature map with value around the input
 - TensorFlow pad the feature map for preventing the computation of filter from being outside the size of inputs
--- 'SAME': pad the feature map to compute normally
--- 'VALID': ignore the part of value of feature map if the size of this part does not fit the kernal size
+    - 'SAME': pad the feature map to compute normally
+    - 'VALID': ignore the part of value of feature map if the size of this part does not fit the kernal size
 
 Convert [Caffe](https://github.com/BVLC/caffe/) models to [TensorFlow](https://github.com/tensorflow/tensorflow).
 
